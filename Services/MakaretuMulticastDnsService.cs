@@ -30,33 +30,34 @@ using Microsoft.Extensions.Options;
 using Makaretu.Dns;
 
 using thZero.Responses;
+using thZero.Configuration.Dns.Multicast;
 
 namespace thZero.Services.Dns.Multicast
 {
-    public abstract class MakaretuMulticastDnsService<TService, TConfig> : ConfigServiceBase<TService, TConfig>, IMulticastDnsService
-        where TConfig: class, IConfigDns
+    public class MakaretuMulticastDnsService : ConfigServiceBase<MakaretuMulticastDnsService, MulticastDnsConfiguration>, IMulticastDnsService
     {
-        public MakaretuMulticastDnsService(IOptions<TConfig> config, ILogger<TService> logger) : base(config, logger)
+        public MakaretuMulticastDnsService(IOptions<MulticastDnsConfiguration> config, ILogger<MakaretuMulticastDnsService> logger) : base(config, logger)
         {
         }
 
         #region Public Methods
         public SuccessResponse Initialize()
         {
+            const string Declaration = "Initialize";
+
             try
             {
-                if (Config.Dns == null)
+                Enforce.AgainstNull(() => Config);
+                if (!Config.Enabled)
                     return Success(false);
-                if (!Config.Dns.Enabled)
+                if (!Config.Local)
                     return Success(false);
-                if (!Config.Dns.Local)
-                    return Success(false);
-                if (String.IsNullOrEmpty(Config.Dns.Label))
+                if (String.IsNullOrEmpty(Config.Label))
                     return Success(false);
 
-                var service = Config.Dns.Label + Local;
+                var service = Config.Label + Local;
 
-                Logger.LogInformation("Registered {service} as Multicast DNS...", service);
+                Logger?.LogInformation("Registered {service} as Multicast DNS...", service);
 
                 //var addresses = MulticastService.GetIPAddresses().Where(ip => ip.AddressFamily == AddressFamily.InterNetwork);
                 var addresses = GetIPAddresses().Where(ip => ip.AddressFamily == AddressFamily.InterNetwork);
@@ -78,7 +79,7 @@ namespace thZero.Services.Dns.Multicast
                         if (!e.Message.Questions.Any(q => q.Name == service))
                             return;
 
-                        Logger.LogDebug("...query for {service}", service);
+                        Logger?.LogDebug2(Declaration, "...query for service: ", service);
 
                         Message res = e.Message.CreateResponse();
                         res.Answers.AddRange(records);
@@ -86,7 +87,7 @@ namespace thZero.Services.Dns.Multicast
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError(ex, null);
+                        Logger?.LogError2(Declaration, ex);
                     }
                 };
                 mdns.Start();
@@ -95,7 +96,7 @@ namespace thZero.Services.Dns.Multicast
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, null);
+                Logger?.LogError2(Declaration, ex);
             }
 
             return Error();
