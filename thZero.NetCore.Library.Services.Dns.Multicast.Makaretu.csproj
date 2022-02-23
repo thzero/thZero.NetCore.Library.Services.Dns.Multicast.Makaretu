@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
 	  <AssemblyName>thZero.NetCore.Library.Services.Dns.Multicast.Makaretu</AssemblyName>
 	  <PackageId>thZero.NetCore.Library.Services.Dns.Multicast.Makaretu</PackageId>
 	  <Description></Description>
